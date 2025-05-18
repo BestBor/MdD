@@ -1,0 +1,3 @@
+# Ignorar archivos CSV grandes
+*.csv
+*.png
