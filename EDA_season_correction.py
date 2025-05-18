@@ -21,4 +21,4 @@ df['Season'] = df['Event dates'].dt.month.apply(assign_season)
 
 # Guardar el resultado
 df.to_csv("TWO_CENTURIES_FINAL_WITH_SEASON.csv", index=False)
-print("✅ Columna 'Season' generada y archivo guardado como TWO_CENTURIES_FINAL_WITH_SEASON.csv")
+print(" Columna 'Season' generada y archivo guardado como TWO_CENTURIES_FINAL_WITH_SEASON.csv")

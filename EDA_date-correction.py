@@ -23,4 +23,4 @@ df['Event dates'] = df['Event dates'].apply(fix_day_zero)
 
 # Guardar archivo actualizado
 df.to_csv("TWO_CENTURIES_DATES_CLEANED_FINAL.csv", index=False)
-print("✅ Fechas con día '00' corregidas y archivo guardado como TWO_CENTURIES_DATES_CLEANED_FINAL.csv")
+print("Fechas con día '00' corregidas y archivo guardado como TWO_CENTURIES_DATES_CLEANED_FINAL.csv")

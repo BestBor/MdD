@@ -16,14 +16,14 @@ valid_dates_mask = df['Event dates'].apply(is_valid_date_format)
 
 # Contar cuántos se eliminarán
 removed = len(df) - valid_dates_mask.sum()
-print(f"\n🧹 Registros eliminados por formato inválido de fecha: {removed}")
+print(f"\n Registros eliminados por formato inválido de fecha: {removed}")
 
 # Filtrar solo válidos
 df_cleaned = df[valid_dates_mask]
 
 # Guardar archivo final limpio
 df_cleaned.to_csv("TWO_CENTURIES_FINAL_VALID_DATES.csv", index=False)
-print("✅ Archivo limpio guardado como TWO_CENTURIES_FINAL_VALID_DATES.csv")
+print("Archivo limpio guardado como TWO_CENTURIES_FINAL_VALID_DATES.csv")
 
 
 df[~valid_dates_mask].to_csv("registros_con_fecha_invalida.csv", index=False)

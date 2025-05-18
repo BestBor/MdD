@@ -25,6 +25,6 @@ def try_parse_date(date_str):
 _ = df['Event dates'].apply(try_parse_date)
 
 # Mostrar resultados
-print(f"\n❌ Fechas con formato incorrecto: {len(invalid_dates)} únicas\n")
+print(f"\nFechas con formato incorrecto: {len(invalid_dates)} únicas\n")
 for val in sorted(invalid_dates):
     print(f"- {val}")
