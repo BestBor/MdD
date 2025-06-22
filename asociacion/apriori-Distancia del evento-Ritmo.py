@@ -1,5 +1,5 @@
 import pandas as pd
-from mlxtend.frequent_patterns import apriori, association_rules
+from mlxtend.frequent_patterns import apriori, association_rules, fpgrowth
 
 # 1. Carga y preprocesamiento de datos
 # ------------------------------------
@@ -20,8 +20,16 @@ print(df['distance_grouped'].value_counts().sort_index(), "\n")
 df['pace_qcat'] = pd.qcut(
     df['Pace_min_per_km'],
     q=4,
-    labels=['Q1', 'Q2', 'Q3', 'Q4']
+    labels=['pace_<6.82', 'pace_6.82–8.18', 'pace_8.18–10.23', 'pace_>10.23']
 )
+quartile_bounds = (
+    df
+    .groupby('pace_qcat')['Pace_min_per_km']
+    .agg(min_rhythm='min', max_rhythm='max')
+    .reset_index()
+)
+print("Rangos de cada cuartil de ritmo:")
+print(quartile_bounds.to_string(index=False), "\n")
 print("Conteo por pace_qcat (cuartiles):")
 print(df['pace_qcat'].value_counts().sort_index(), "\n")
 
@@ -44,7 +52,7 @@ confidence_values = [0.3, 0.2]
 lift_thresholds   = [1.0, 1.5]
 
 for sup in support_values:
-    print(f"\n=== Soporte mínimo = {sup*100:.2f}% ===")
+    print(f"\n=== Apriori con soporte mínimo = {sup*100:.2f}% ===")
     freq_itemsets = apriori(
         transactions,
         min_support=sup,
@@ -83,6 +91,52 @@ for sup in support_values:
             else:
                 print(f"    * Reglas con lift ≥ {lift_th}:")
                 print(subset.sort_values('lift', ascending=False)
+                      .loc[:, ['antecedents','consequents','support','confidence','lift']]
+                      .head(5))
+
+# 5. Segmento FP-Growth
+# ---------------------
+print("\n=== FP-Growth ===")
+# Parámetros para FP-Growth
+growth_support    = 0.001   # 0.1%
+growth_confidence = 0.2     # 20%
+growth_lift      = 1.5     # threshold de lift
+
+# 5.1. Ítem-sets frecuentes con FP-Growth
+print(f"Ejecutando fpgrowth con soporte mínimo = {growth_support*100:.2f}%...")
+freq_fp = fpgrowth(
+    transactions,
+    min_support=growth_support,
+    use_colnames=True
+)
+if freq_fp.empty:
+    print("No se generaron ítem-sets frecuentes con fpgrowth.")
+else:
+    # 5.2. Generar reglas
+    rules_fp = association_rules(
+        freq_fp,
+        metric='confidence',
+        min_threshold=growth_confidence
+    )
+    if rules_fp.empty:
+        print("No se generaron reglas a partir de fpgrowth.")
+    else:
+        # 5.3. Filtrar Distance→Pace
+        mask_fp = (
+            rules_fp['antecedents'].apply(is_distance) &
+            rules_fp['consequents'].apply(is_qpace)
+        )
+        dp_fp = rules_fp[mask_fp].copy()
+        if dp_fp.empty:
+            print("Sin reglas distance_grouped→pace_qcat en fpgrowth.")
+        else:
+            # 5.4. Filtrar por lift y mostrar top 5
+            print(f"Reglas FP-Growth con lift ≥ {growth_lift}:")
+            top_fp = dp_fp[dp_fp['lift'] >= growth_lift]
+            if top_fp.empty:
+                print(f"  * Ninguna regla con lift ≥ {growth_lift}.")
+            else:
+                print(top_fp.sort_values('lift', ascending=False)
                       .loc[:, ['antecedents','consequents','support','confidence','lift']]
                       .head(5))
 
