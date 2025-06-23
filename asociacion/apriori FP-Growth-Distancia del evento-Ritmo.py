@@ -3,7 +3,7 @@ from mlxtend.frequent_patterns import apriori, association_rules, fpgrowth
 
 # 1. Carga y preprocesamiento de datos
 # ------------------------------------
-df = pd.read_csv('datos_preprocesados.csv')
+df = pd.read_csv('../TWO_CENTURIES_ANALYSIS_CLEAN_WITH_PACE.csv')
 
 # 1.1. Agrupación de distancias: <50-100, 100-200, 200-300, 300+ km>
 df['distance_grouped'] = pd.cut(
