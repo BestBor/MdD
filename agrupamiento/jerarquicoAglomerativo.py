@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 from sklearn.decomposition import PCA
+from sklearn.cluster import AgglomerativeClustering
+from scipy.cluster.hierarchy import dendrogram, linkage
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
@@ -28,7 +29,7 @@ except Exception as e:
 
 variables = ['Distance_km', 'Athlete age', 'Speed_calc_kmh']
 semilla = 42
-df_muestra = df.sample(n=50000, random_state=semilla)
+df_muestra = df.sample(n=6000, random_state=semilla)
 
 # ------------------- Preparación de datos -------------------
 
@@ -40,42 +41,32 @@ def preparar_datos(df_sample):
 
 X_scaled, df_sel = preparar_datos(df_muestra)
 
-# ------------------- Evaluación de K -------------------
+# ------------------- Dendrograma -------------------
 
-inertia_vals = []
-resultados = []
+# Muestra reducida para visualización clara del dendrograma
+X_sub = X_scaled[:500]  # 500 puntos es manejable
+Z = linkage(X_sub, method='ward')
 
-print("Evaluación de K:")
-for k in range(2, 10):
-    modelo = KMeans(n_clusters=k, random_state=0)
-    etiquetas = modelo.fit_predict(X_scaled)
-    inertia_vals.append(modelo.inertia_)
-    sil = silhouette_score(X_scaled, etiquetas)
-    calinski = calinski_harabasz_score(X_scaled, etiquetas)
-    davies = davies_bouldin_score(X_scaled, etiquetas)
-    resultados.append({
-        'k': k,
-        'Silhouette': sil,
-        'Calinski-Harabasz': calinski,
-        'Davies-Bouldin': davies
-    })
-    print(f"k={k} | Silhouette={sil:.3f} | Calinski={calinski:.1f} | Davies-Bouldin={davies:.3f}")
-
-# Diagrama de codo
-plt.figure(figsize=(6, 4))
-plt.plot(range(2, 10), inertia_vals, marker='o')
-plt.title("Diagrama de Codo - Inercia vs K")
-plt.xlabel("Número de Clusters (k)")
-plt.ylabel("Inercia")
-plt.grid(True)
+plt.figure(figsize=(12, 6))
+dendrogram(
+    Z,
+    truncate_mode='level',  # Solo mostrar niveles superiores
+    p=25,  # profundidad máxima del dendrograma
+    leaf_rotation=90.,
+    leaf_font_size=10.,
+    show_contracted=True
+)
+plt.title("Dendrograma - Método de Ward")
+plt.xlabel("Muestras (truncadas)")
+plt.ylabel("Distancia")
 plt.tight_layout()
 plt.show()
 
-# ------------------- KMeans con k=4 -------------------
+# ------------------- Agglomerative Clustering -------------------
 
-modelo_final = KMeans(n_clusters=4, random_state=0)
-etiquetas_final = modelo_final.fit_predict(X_scaled)
-df_sel['Cluster'] = etiquetas_final
+modelo = AgglomerativeClustering(n_clusters=4, linkage='ward')
+etiquetas = modelo.fit_predict(X_scaled)
+df_sel['Cluster'] = etiquetas
 
 # ------------------- Visualización PCA -------------------
 
@@ -84,7 +75,7 @@ X_pca = pca.fit_transform(X_scaled)
 
 plt.figure(figsize=(6, 5))
 sns.scatterplot(x=X_pca[:, 0], y=X_pca[:, 1], hue=df_sel['Cluster'], palette='tab10', s=10)
-plt.title("Clusterización con KMeans (PCA 2D)")
+plt.title("Clusterización Jerárquica (PCA 2D)")
 plt.xlabel("PCA 1")
 plt.ylabel("PCA 2")
 plt.legend(title="Cluster", loc="best", bbox_to_anchor=(1, 1))
@@ -104,21 +95,21 @@ scatter = ax.scatter(
     s=10,
     alpha=0.7
 )
-ax.set_title("Clusterización 3D - Muestra 1")
+ax.set_title("Clusterización Jerárquica 3D")
 ax.set_xlabel("Edad del atleta")
 ax.set_ylabel("Velocidad calculada (km/h)")
 ax.set_zlabel("Distancia (km)")
-legend_labels = [f'Cluster {i}' for i in np.unique(etiquetas_final)]
+legend_labels = [f'Cluster {i}' for i in np.unique(etiquetas)]
 ax.legend(handles=scatter.legend_elements()[0], labels=legend_labels, title="Cluster", loc='best')
 plt.tight_layout()
 plt.show()
 
-# ------------------- Métricas Finales -------------------
+# ------------------- Métricas Internas -------------------
 
-print("\nResumen de métricas internas para k=4:\n")
-sil = silhouette_score(X_scaled, etiquetas_final)
-calinski = calinski_harabasz_score(X_scaled, etiquetas_final)
-davies = davies_bouldin_score(X_scaled, etiquetas_final)
+print("\nResumen de métricas internas para agrupamiento jerárquico (k=4):\n")
+sil = silhouette_score(X_scaled, etiquetas)
+calinski = calinski_harabasz_score(X_scaled, etiquetas)
+davies = davies_bouldin_score(X_scaled, etiquetas)
 
 print(f"Silhouette Score: {sil:.3f}")
 print(f"Calinski-Harabasz Index: {calinski:.1f}")
